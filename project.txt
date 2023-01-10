@@ -1,0 +1,1044 @@
+#include <MKL25Z4.H>
+#include <stdio.h>
+
+
+#define RS 0x04     /* PTA2 mask */ 
+#define RW 0x10     /* PTA4 mask */ 
+#define EN 0x20     /* PTA5 mask */
+
+void Delay(volatile unsigned int time_del);
+void LCD_command(unsigned char command);
+void LCD_data(unsigned char data);
+void LCD_init(void);
+void LCD_ready(void);
+void keypad_init(void);
+uint32_t keypad_getkey(void);
+void kazananlediyak(int x, int y);
+void PORTA_IRQHandler(void) ;
+int main(void)
+{
+  uint32_t a=123456; 
+	uint32_t key;
+  char buffer[20];
+	char yazi[]={'T','O',' ','S','T','A','R','T',' ','P','L','E','A','S','E'};
+	char yazi2[]={'P','R','E','S','S',' ','A',' ','K','E','Y'};
+	char yazi3[] ={'P','L','A','Y','E','R',' ','1',' ','S',' ','T','U','R','N'};
+  char yazi4[] ={'P','L','A','Y','E','R',' ','2',' ','S',' ','T','U','R','N'};
+	char yazi5[]={'P','L','A','Y','E','R',' ','1',' ','W','I','N','S','!'};
+	char yazi6[]={'P','L','A','Y','E','R',' ','2',' ','W','I','N','S','!'};
+	char draw[]={'N','O',' ','O', 'N','E',' ','W','I','N','S'};
+	char girildi[]={'A','L','R','E','A','D','Y','P','R','E','S','S','E','D','!'};
+	char lookup[]= {'1','2','3','A','4','5','6','B','7','8','9','C','*','0','#','D'};
+	char p1[]={0,0,0,0,0};
+	char p2[]={0,0,0,0};
+  int l,length_hex, length_dec,length_buff;
+	int dahaoncegirildi=0;
+	int counter=0;
+	int pl1=0;
+	int pl2=0;
+	int dogruyaz=0;
+	int ilk=0,ikinci=0,uc=0,dort=0,bes=0,alti=0,yedi=0,sekiz=0,dokuz=0;
+	int state1=0;
+	int player_1=0;
+	int player_2=0;
+	int win=0;
+	int i=0,k=0,j=0;
+	int hangiled=100;
+	int kiminsirasi=0;//Player1 mi Player2 mi diye bakacagiz
+	LCD_init();
+	LCD_command(0x80);      /* set cursor at first line */
+	keypad_init();
+	
+	key=keypad_getkey();
+	 SIM->SCGC5 |=0x0400;
+		PORTB->PCR[0] =0x100;
+		PORTB->PCR[1] =0x100;
+		PORTB->PCR[2] =0x100;
+		PORTB->PCR[3] =0x100;
+		PORTB->PCR[8] =0x100;
+		PORTB->PCR[9] =0x100;
+		PORTB->PCR[10] =0x100;
+		PORTB->PCR[11] =0x100;
+		PTB->PDDR=0xF0F;
+	  PTB->PCOR=0x01;
+		PTB->PCOR=0x02;
+		PTB->PCOR=0x04;
+		PTB->PCOR=0x08;
+		PTB->PCOR=0x100;
+		PTB->PCOR=0x200;
+		PTB->PCOR=0x400;
+		PTB->PCOR=0x800;
+		SIM->SCGC5 |=0x2000;
+		PORTE->PCR[0] =0x100;
+		PORTE->PCR[1] =0x100;
+		PORTE->PCR[2] =0x100;
+		PORTE->PCR[3] =0x100;
+		PORTE->PCR[21] =0x100;
+		PORTE->PCR[22] =0x100;
+		PORTE->PCR[23] =0x100;
+		PORTE->PCR[30] =0x100;
+		PTE->PDDR=0x40E0000F;
+		PTE->PCOR=0x40000000;
+		PTE->PCOR=0x01;
+		PTE->PCOR=0x02;
+		PTE->PCOR=0x04;
+		PTE->PCOR=0x08;
+		PTE->PCOR=0x200000;
+		PTE->PCOR=0x400000;
+		PTE->PCOR=0x800000;
+	 SIM->SCGC5 |=0x0800;
+	 PORTC->PCR[12] =0x100;
+	PORTC->PCR[13] =0x100;
+	PTC->PDDR=0x3000;
+	PTC->PCOR=0x1000;
+	PTC->PCOR=0x2000;
+	
+	
+	while(1)
+	{key=keypad_getkey();
+	while(key==0 & counter==0)
+	{ LCD_command(0x80);
+		for(l=0;l<15;l++)
+		{
+			 LCD_data(yazi[l]);
+			 		Delay(3000);
+		}
+		LCD_command(0xC0);
+		for(l=0;l<11;l++)
+		{
+			 LCD_data(yazi2[l]);
+			 Delay(3000);
+		}
+		counter++;
+	}
+
+	
+	while(key!=0)
+	{
+for (l=0;l<5;l++)
+{if (p1[l]==lookup[key-1]){
+dahaoncegirildi=1;
+}
+}
+for (l=0;l<4;l++)
+{if (p2[l]==lookup[key-1]){
+dahaoncegirildi=1;
+}
+}
+
+
+if (dahaoncegirildi==0) 
+{
+		Delay(300000);
+    for(l=0;l<1;l++){
+		kiminsirasi= kiminsirasi+1;
+		}
+
+		if((kiminsirasi==1) || (kiminsirasi==3) || (kiminsirasi==5) || (kiminsirasi==7) || (kiminsirasi==9))
+		{
+			player_1=1;
+			player_2=0;
+			pl1=((kiminsirasi+1)/2)-1;
+			p1[pl1]=lookup[key-1];
+			Delay(300000);
+	  }
+		
+		if(kiminsirasi==2 || kiminsirasi==4 || kiminsirasi==6 || kiminsirasi==8 )
+		
+		{ 
+			player_1=0;
+			player_2=1;
+			pl2=((kiminsirasi)/2)-1;
+			p2[pl2]=lookup[key-1];
+			Delay(300000);
+	  }
+		
+	
+	while(player_1==1){
+	 SIM->SCGC5 |=0x0400;
+		PORTB->PCR[0] =0x100;
+		PORTB->PCR[1] =0x100;
+		PORTB->PCR[2] =0x100;
+		PORTB->PCR[3] =0x100;
+		PORTB->PCR[8] =0x100;
+		PORTB->PCR[9] =0x100;
+		PORTB->PCR[10] =0x100;
+		PORTB->PCR[11] =0x100;
+		PTB->PDDR=0xF0F;
+		LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+			
+		
+		LCD_command(0x80);
+		for(l=0;l<15;l++)
+		{
+			 LCD_data(yazi3[l]);
+			 Delay(3000);
+		}
+
+	for (l=0;l<5;l++){
+  if (p1[l]!=0)
+	{LCD_data(p1[l]);
+	}
+	}
+LCD_command(0xCA);
+LCD_data('(');
+for (l=0;l<4;l++){
+  if (p2[l]!=0)
+	{LCD_data(p2[l]);
+	}
+
+}
+LCD_data(')');
+
+		
+		if(lookup[key-1]=='1') //B0
+		{ 
+			PTB->PSOR=0x01;
+			Delay(3000000);
+			PTB->PCOR=0x01;
+		}
+	if(lookup[key-1]=='2') //B1
+		{ 
+			PTB->PSOR=0x02;
+		Delay(3000000);
+			PTB->PCOR=0x02;
+		}
+		if(lookup[key-1]=='3') //B2
+		{ 
+	     PTB->PSOR=0x04;
+			Delay(3000000);
+			PTB->PCOR=0x04;
+		}
+		if(lookup[key-1]=='4') //B3
+		{ 
+	     PTB->PSOR=0x08;
+Delay(3000000);
+			PTB->PCOR=0x08;
+		}
+		if(lookup[key-1]=='5') //B8
+		{ 
+	     PTB->PSOR=0x100;
+	Delay(3000000);
+			PTB->PCOR=0x100;
+			
+		}
+	if(lookup[key-1]=='6') //B9
+		{  
+	     PTB->PSOR=0x200;
+			Delay(3000000);
+			PTB->PCOR=0x200;
+		}
+		if(lookup[key-1]=='7') //B10
+		{ 
+
+	    PTB->PSOR=0x400;
+			Delay(3000000);
+			PTB->PCOR=0x400;
+		}
+		if(lookup[key-1]=='8') //B11
+		{
+	     PTB->PSOR=0x800;
+	Delay(3000000);
+			PTB->PCOR=0x800;
+		}
+		if(lookup[key-1]=='9') //E30
+		{ 
+		SIM->SCGC5 |=0x2000;
+		PORTE->PCR[0] =0x100;
+		PORTE->PCR[1] =0x100;
+		PORTE->PCR[2] =0x100;
+		PORTE->PCR[3] =0x100;
+		PORTE->PCR[21] =0x100;
+		PORTE->PCR[22] =0x100;
+		PORTE->PCR[23] =0x100;
+		PORTE->PCR[30] =0x100;
+
+	     PTE->PSOR=0x40000000;
+Delay(3000000);
+			PTE->PCOR=0x40000000;
+		}
+	player_1=0;
+LCD_command(0xC0);
+  for (l=0;l<5;l++){
+  if (p1[l]!=0)
+	{LCD_data(p1[l]);
+	}
+	}
+
+	}
+
+
+		
+	while(player_2==1){
+		SIM->SCGC5 |=0x2000;
+		PORTE->PCR[0] =0x100;
+		PORTE->PCR[1] =0x100;
+		PORTE->PCR[2] =0x100;
+		PORTE->PCR[3] =0x100;
+		PORTE->PCR[4] =0x100;
+		PORTE->PCR[5] =0x100;
+		PORTE->PCR[21] =0x100;
+		PORTE->PCR[22] =0x100;
+		PORTE->PCR[23] =0x100;
+		PORTE->PCR[30] =0x100;
+	{
+		LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+			
+		
+		LCD_command(0x80);
+		for(l=0;l<15;l++)
+		{
+			 LCD_data(yazi4[l]);
+			 Delay(3000);
+		}
+{
+			LCD_command(0xC0);
+	
+for (l=0;l<4;l++){
+  if (p2[l]!=0)
+	{LCD_data(p2[l]);
+	}
+	}
+LCD_command(0xC9);
+LCD_data('(');
+for (l=0;l<5;l++){
+  if (p1[l]!=0)
+	{LCD_data(p1[l]);
+	}
+
+}
+LCD_data(')');
+		
+		if(lookup[key-1]=='1') //E0
+		{ 
+			PTE->PSOR=0x01;
+			Delay(3000000);
+			PTE->PCOR=0x01;
+		}
+	if(lookup[key-1]=='2') //E1
+		{ 
+			PTE->PSOR=0x02;
+		Delay(3000000);
+			PTE->PCOR=0x02;
+		}
+		if(lookup[key-1]=='3') //E2
+		{ 
+	     PTE->PSOR=0x04;
+		Delay(3000000);
+			PTE->PCOR=0x04;
+		}
+		if(lookup[key-1]=='4') //E3
+		{ 
+	     PTE->PSOR=0x08;
+			Delay(3000000);
+			PTE->PCOR=0x08;
+		}
+		if(lookup[key-1]=='5') //C12
+		{ 
+			SIM->SCGC5 |=0x0800;
+				 PORTC->PCR[12] =0x100;
+	PORTC->PCR[13] =0x100;
+	PTC->PDDR=0x3000;
+	     PTC->PSOR=0x1000;
+			Delay(3000000);
+			PTC->PCOR=0x1000;
+			
+		}
+		if(lookup[key-1]=='6') //C13
+		{ 
+			SIM->SCGC5 |=0x0800;
+		 PORTC->PCR[12] =0x100;
+	PORTC->PCR[13] =0x100;
+	PTC->PDDR=0x3000;
+	     PTC->PSOR=0x2000;
+			Delay(3000000);
+			PTC->PCOR=0x2000;
+		}
+		if(lookup[key-1]=='7') //E21
+		{ 
+
+	    PTE->PSOR=0x200000;
+			Delay(3000000);
+			PTE->PCOR=0x200000;
+		}
+		if(lookup[key-1]=='8') //E22
+		{
+	     PTE->PSOR=0x400000;
+			Delay(3000000);
+			PTE->PCOR=0x400000;
+		}
+		if(lookup[key-1]=='9') //E23
+		{ 
+
+	     PTE->PSOR=0x800000;
+Delay(3000000);
+			PTE->PCOR=0x800000;
+		}
+	}
+
+}
+LCD_command(0xC0);
+for (l=0;l<4;l++){
+  if (p2[l]!=0)
+	{LCD_data(p2[l]);
+	}
+	}
+
+	player_2=0;
+	}
+		
+ key=keypad_getkey();
+}	
+while(dahaoncegirildi==1)
+{
+	 LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0x80);
+	for(l=0;l<7;l++)
+		{LCD_data(girildi[l]);
+		}
+	LCD_command(0xC0);
+	 for(l=7;l<15;l++){
+	 LCD_data(girildi[l]);
+	 }
+	 key=0;
+	 dahaoncegirildi=0;
+}
+
+	}
+
+
+
+	
+	if (kiminsirasi>4){
+		for( i=0;i<5;i++){
+		if (p1[i]=='1'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='2'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='3'){
+								 win=1;
+									 hangiled=1;
+									 
+								 }	} } } } } } } }
+
+
+		for( i=0;i<5;i++){
+		if (p1[i]=='1'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='4'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='7'){
+								 win=1;
+									 hangiled=2;
+								 }	} } } } } } } }
+  
+		for( i=0;i<5;i++){
+		if (p1[i]=='1'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='5'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='9'){
+								 win=1;
+									 hangiled=3;
+								 }	} } } } } } } }
+
+		for( i=0;i<5;i++){
+		if (p1[i]=='4'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='5'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='6'){
+								 win=1;
+									 hangiled=4;
+								 }	} } } } } } } }
+
+		for( i=0;i<5;i++){
+		if (p1[i]=='2'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='5'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='8'){
+								 win=1;
+									 hangiled=5;
+								 }	} } } } } } } }
+		
+		for( i=0;i<5;i++){
+		if (p1[i]=='3'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='5'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='7'){
+								 win=1;
+									 hangiled=6;
+								 }	} } } } } } } }
+		
+			for( i=0;i<5;i++){
+		if (p1[i]=='7'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='8'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='9'){
+								 win=1;
+									 hangiled=7;
+								 }	} } } } } } } }
+
+ 			for( i=0;i<5;i++){
+		if (p1[i]=='3'){
+			for (k=0;k<5;k++){
+			 if (i!=k){
+			   if (p1[k]=='6'){
+				   for (l=0;l<5;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p1[l]=='9'){
+								 win=1;
+									 hangiled=8;
+								 }	} } } } } } } }
+
+	 for( i=0;i<4;i++){
+		if (p2[i]=='1'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='2'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='3'){
+								 win=2;
+									 hangiled=1;
+									 
+								 }	} } } } } } } }
+
+
+		for( i=0;i<4;i++){
+		if (p2[i]=='1'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='4'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='7'){
+								 win=2;
+									 hangiled=2;
+								 }	} } } } } } } }
+  
+		for( i=0;i<4;i++){
+		if (p2[i]=='1'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='5'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='9'){
+								 win=2;
+									 hangiled=3;
+								 }	} } } } } } } }
+
+		for( i=0;i<4;i++){
+		if (p2[i]=='4'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='5'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='6'){
+								 win=2;
+									 hangiled=4;
+								 }	} } } } } } } }
+
+		for( i=0;i<4;i++){
+		if (p2[i]=='2'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='5'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='8'){
+								 win=2;
+									 hangiled=5;
+								 }	} } } } } } } }
+		
+		for( i=0;i<4;i++){
+		if (p2[i]=='3'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='5'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='7'){
+								 win=2;
+									 hangiled=6;
+								 }	} } } } } } } }
+		
+			for( i=0;i<4;i++){
+		if (p2[i]=='7'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='8'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='9'){
+								 win=2;
+									 hangiled=7;
+								 }	} } } } } } } }
+
+ 			for( i=0;i<4;i++){
+		if (p2[i]=='3'){
+			for (k=0;k<4;k++){
+			 if (i!=k){
+			   if (p2[k]=='6'){
+				   for (l=0;l<4;l++){
+						 if (l!=k){
+						   if(i!=l){
+								 if (p2[l]=='9'){
+								 win=2;
+									 hangiled=8;
+								 }	} } } } } } } }
+ 
+	if( kiminsirasi==9){
+		LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	
+	while (win==0){
+	LCD_command(0x80);
+if (dogruyaz==0){
+	for (l=0; l<11;l ++){
+		LCD_data(draw[l]);}
+	}
+dogruyaz++;
+	}
+	}
+
+
+
+	}
+	
+	if (win==1){
+		 LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	}			
+	while (win==1){
+ kazananlediyak(win,hangiled);
+	LCD_command(0x80);
+	for (l=0;l<14;l++){
+	LCD_data(yazi5[l]);
+	}
+	
+	
+	}					
+					 
+				
+	if (win==2){
+		 LCD_command(0x80);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	LCD_command(0xC0);
+		for(l=0;l<16;l++)
+		{
+			 LCD_data(' ');
+			 Delay(3000);
+		}
+	}			
+	while (win==2){
+ kazananlediyak(win,hangiled);
+	LCD_command(0x80);
+	for (l=0;l<14;l++){
+	LCD_data(yazi6[l]);
+	}
+	
+	
+	}					 
+					
+  		 
+				 
+				
+			 
+	}
+	}
+
+
+void LCD_init(void)
+{
+    SIM->SCGC5 |= 0x1000;       /* enable clock to Port D */ 
+    PORTD->PCR[0] = 0x100;      /* make PTD0 pin as GPIO */
+    PORTD->PCR[1] = 0x100;      /* make PTD1 pin as GPIO */
+    PORTD->PCR[2] = 0x100;      /* make PTD2 pin as GPIO */
+    PORTD->PCR[3] = 0x100;      /* make PTD3 pin as GPIO */
+    PORTD->PCR[4] = 0x100;      /* make PTD4 pin as GPIO */
+    PORTD->PCR[5] = 0x100;      /* make PTD5 pin as GPIO */
+    PORTD->PCR[6] = 0x100;      /* make PTD6 pin as GPIO */
+    PORTD->PCR[7] = 0x100;      /* make PTD7 pin as GPIO */
+    PTD->PDDR = 0xFF;           /* make PTD7-0 as output pins */
+    
+    SIM->SCGC5 |= 0x0200;       /* enable clock to Port A */ 
+    PORTA->PCR[2] = 0x100;      /* make PTA2 pin as GPIO */
+    PORTA->PCR[4] = 0x100;      /* make PTA4 pin as GPIO */
+    PORTA->PCR[5] = 0x100;      /* make PTA5 pin as GPIO */
+    PTA->PDDR |= 0x34;          /* make PTA5, 4, 2 as output pins */
+    
+    LCD_command(0x38);      /* set 8-bit data, 2-line, 5x7 font */
+    LCD_command(0x01);      /* clear screen, move cursor to home */
+    LCD_command(0x0F);      /* turn on display, cursor blinking */
+}
+
+/* This function waits until LCD controller is ready to
+ * accept a new command/data before returns.
+ */
+void LCD_ready(void)
+{
+    uint32_t status;
+    
+    PTD->PDDR = 0x00;          /* PortD input */
+    PTA->PCOR = RS;         /* RS = 0 for status */
+    PTA->PSOR = RW;         /* R/W = 1, LCD output */
+    
+    do {    /* stay in the loop until it is not busy */
+			  PTA->PCOR = EN;
+			  Delay(500);
+        PTA->PSOR = EN;     /* raise E */
+        Delay(500);
+        status = PTD->PDIR; /* read status register */
+        PTA->PCOR = EN;
+        Delay(500);			/* clear E */
+    } while (status & 0x80UL);    /* check busy bit */
+    
+    PTA->PCOR = RW;         /* R/W = 0, LCD input */
+    PTD->PDDR = 0xFF;       /* PortD output */
+}
+
+void LCD_command(unsigned char command)
+{
+    LCD_ready();			/* wait until LCD is ready */
+    PTA->PCOR = RS | RW;    /* RS = 0, R/W = 0 */
+    PTD->PDOR = command;
+    PTA->PSOR = EN;         /* pulse E */
+    Delay(500);
+    PTA->PCOR = EN;
+}
+
+void LCD_data(unsigned char data)
+{
+    LCD_ready();			/* wait until LCD is ready */
+    PTA->PSOR = RS;         /* RS = 1, R/W = 0 */
+    PTA->PCOR = RW;
+    PTD->PDOR = data;
+    PTA->PSOR = EN;         /* pulse E */
+    Delay(500);
+    PTA->PCOR = EN;
+}
+
+/* Delay n milliseconds
+ * The CPU core clock is set to MCGFLLCLK at 41.94 MHz in SystemInit().
+ */
+
+/* delay n microseconds
+ * The CPU core clock is set to MCGFLLCLK at 41.94 MHz in SystemInit().
+ */
+
+
+void Delay(volatile unsigned int time_del) {
+  while (time_del--) 
+		{
+  }
+}
+
+
+void keypad_init(void)
+{
+    SIM->SCGC5 |= 0x0800;       /* enable clock to Port C */ 
+    PORTC->PCR[0] = 0x103;      /* make PTC0 pin as GPIO and enable pullup*/
+    PORTC->PCR[1] = 0x103;      /* make PTC1 pin as GPIO and enable pullup*/
+    PORTC->PCR[2] = 0x103;      /* make PTC2 pin as GPIO and enable pullup*/
+    PORTC->PCR[3] = 0x103;      /* make PTC3 pin as GPIO and enable pullup*/
+    PORTC->PCR[4] = 0x103;      /* make PTC4 pin as GPIO and enable pullup*/
+    PORTC->PCR[5] = 0x103;      /* make PTC5 pin as GPIO and enable pullup*/
+    PORTC->PCR[6] = 0x103;      /* make PTC6 pin as GPIO and enable pullup*/
+    PORTC->PCR[7] = 0x103;      /* make PTC7 pin as GPIO and enable pullup*/
+    PTC->PDDR = 0x00;         /* make PTC7-0 as input pins */
+}
+
+
+
+
+uint32_t keypad_getkey(void)
+{
+    uint32_t row, col;
+    const char row_select[] = {0x01, 0x02, 0x04, 0x08}; /* one row is active */
+
+    /* check to see any key pressed */
+    PTC->PDDR |= 0x0F;          /* rows output */
+    PTC->PCOR = 0x0F;               /* ground rows */
+    Delay(500);                 /* wait for signal return */
+    col =  PTC->PDIR & 0xF0UL;     /* read all columns */
+    PTC->PDDR = 0;              /*  rows input */
+    if (col == 0xF0UL)
+        return 0;               /* no key pressed */
+
+    /* If a key is pressed, it gets here to find out which key.
+     * It activates one row at a time and read the input to see
+     * which column is active. */
+    for (row = 0; row < 4; row++)
+    {
+        PTC->PDDR = 0;                  /* disable all rows */
+        PTC->PDDR |= row_select[row];   /* enable one row */
+        PTC->PCOR = row_select[row];    /* drive the active row low */
+        Delay(500);                     /* wait for signal to settle */
+        col = PTC->PDIR & 0xF0UL;         /* read all columns */
+        if (col != 0xF0UL) break;         /* if one of the input is low, some key is pressed. */
+    }
+    PTC->PDDR = 0;                      /* disable all rows */
+    if (row == 4) 
+        return 0;                       /* if we get here, no key is pressed */
+ 
+    /* gets here when one of the rows has key pressed, check which column it is */
+    if (col == 0xE0UL) return row * 4 + 1;    /* key in column 0 */
+    if (col == 0xD0UL) return row * 4 + 2;    /* key in column 1 */
+    if (col == 0xB0UL) return row * 4 + 3;    /* key in column 2 */
+    if (col == 0x70UL) return row * 4 + 4;    /* key in column 3 */
+
+    return 0;   /* just to be safe */
+}
+
+void kazananlediyak(int x,int y){
+	 SIM->SCGC5 |=0x0400;
+		PORTB->PCR[0] =0x100;
+		PORTB->PCR[1] =0x100;
+		PORTB->PCR[2] =0x100;
+		PORTB->PCR[3] =0x100;
+		PORTB->PCR[8] =0x100;
+		PORTB->PCR[9] =0x100;
+		PORTB->PCR[10] =0x100;
+		PORTB->PCR[11] =0x100;
+		PTB->PDDR=0xF0F;
+	  SIM->SCGC5 |=0x2000;
+		PORTE->PCR[0] =0x100;
+		PORTE->PCR[1] =0x100;
+		PORTE->PCR[2] =0x100;
+		PORTE->PCR[3] =0x100;
+		PORTE->PCR[21] =0x100;
+		PORTE->PCR[22] =0x100;
+		PORTE->PCR[23] =0x100;
+		PORTE->PCR[30] =0x100;
+		PTE->PDDR=0x40E0000F;
+   	SIM->SCGC5 |=0x0800;
+	  PORTC->PCR[12] =0x100;
+  	PORTC->PCR[13] =0x100;
+   	PTC->PDDR=0x3000;
+if (x==1)
+{ if (y==1){//123
+
+PTB->PSOR=0x01;
+PTB->PSOR=0x02;
+PTB->PSOR=0x04;
+
+}
+ if (y==2){//147
+
+PTB->PSOR=0x01;
+PTB->PSOR=0x08;
+PTB->PSOR=0x400;
+
+}
+
+if (y==3){//159
+
+PTB->PSOR=0x01;
+PTB->PSOR=0x100;
+PTE->PSOR=0x40000000;
+
+}
+
+if (y==4){//456
+
+PTB->PSOR=0x08;
+PTB->PSOR=0x100;
+PTB->PSOR=0x200;
+
+}
+
+if (y==5){//258
+
+PTB->PSOR=0x02;
+PTB->PSOR=0x100;
+PTB->PSOR=0x800;
+
+}
+
+
+if (y==6){//357
+
+PTB->PSOR=0x04;
+PTB->PSOR=0x100;
+PTB->PSOR=0x400;
+
+}
+if (y==7){//789
+
+PTB->PSOR=0x400;
+PTB->PSOR=0x800;
+PTE->PSOR=0x40000000;
+
+}
+if (y==8){//369
+
+PTB->PSOR=0x04;
+PTB->PSOR=0x200;
+PTE->PSOR=0x40000000;
+
+}
+
+}
+//////////////
+
+if (x==2)
+{ if (y==1){//123
+
+PTE->PSOR=0x01;
+PTE->PSOR=0x02;
+PTE->PSOR=0x04;
+
+}
+ if (y==2){//147
+
+PTE->PSOR=0x01;
+PTE->PSOR=0x08;
+PTE->PSOR=0x200000;
+
+}
+
+if (y==3){//159
+
+PTE->PSOR=0x01;
+PTC->PSOR=0x1000;
+PTE->PSOR=0x800000;
+
+}
+
+if (y==4){//456
+
+PTE->PSOR=0x08;
+PTC->PSOR=0x1000;
+PTC->PSOR=0x2000;
+
+}
+
+
+
+if (y==5){//258
+
+PTE->PSOR=0x02;
+PTC->PSOR=0x1000;
+PTE->PSOR=0x400000;
+
+}
+
+if (y==6){//357
+
+PTE->PSOR=0x04;
+PTC->PSOR=0x1000;
+PTE->PSOR=0x200000;
+
+}
+if (y==7){//789
+
+PTE->PSOR=0x200000;
+PTE->PSOR=0x400000;
+PTE->PSOR=0x800000;
+
+}
+if (y==8){//369
+
+PTE->PSOR=0x04;
+PTC->PSOR=0x2000;
+PTE->PSOR=0x800000;
+
+}
+
+}
+
+
+}
